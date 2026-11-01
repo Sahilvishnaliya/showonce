@@ -143,6 +143,13 @@ h1{font-family:var(--display);font-size:clamp(40px,4.6vw,60px);font-weight:800;l
 .footer-row p{margin:0;color:var(--muted);font-size:13.5px;max-width:46em}
 .footer-row .mono{margin-left:auto;color:var(--muted)}
 
+.passport-panel{margin-top:12px;border:1.5px solid var(--ink);border-radius:14px;padding:14px;background:#FFF6E8}
+.passport-meta{margin:8px 0;display:grid;gap:5px}
+.passport-meta div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--border);padding-bottom:4px}
+.passport-meta dt{color:var(--muted)}
+.passport-meta dd{margin:0;font-weight:600;word-break:break-all;text-align:right}
+.passport-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+
 /* reveal */
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}

@@ -6,6 +6,7 @@ from collections import defaultdict, deque
 from flask import Flask, jsonify, request, send_from_directory
 
 from core.learn import learn_program
+from core.passport import create_passport, verify_passport
 from core.robot import plan_execution, verify_execution
 from core.sam_live import live_enabled, segment_live
 
@@ -106,6 +107,24 @@ def verify_route():
     return jsonify(verify_execution(body["objects"], body["bins"]))
 
 
+@app.post("/api/passport")
+def passport_route():
+    body = _body()
+    if body is None or not isinstance(body.get("program"), dict):
+        return jsonify({"error": "Body must be {program: {...}, verification: {...}}."}), 400
+    return jsonify(create_passport(body["program"], body.get("verification") or {},
+                                   str(body.get("bench", "showonce-bench"))[:60]))
+
+
+@app.post("/api/passport/verify")
+def passport_verify_route():
+    body = _body()
+    if body is None or not isinstance(body.get("passport"), dict):
+        return jsonify({"error": "Body must be {passport: {...}}."}), 400
+    result = verify_passport(body["passport"])
+    return jsonify(result), (200 if result["valid"] else 422)
+
+
 @app.post("/api/segment-live")
 def segment_live_route():
     if _rate_limited((request.remote_addr or "local") + ":live", limit=20, window=60):
@@ -137,6 +156,10 @@ def vercel_dispatch():
         return plan_route()
     if target == "verify" and request.method == "POST":
         return verify_route()
+    if target == "passport" and request.method == "POST":
+        return passport_route()
+    if target == "passport/verify" and request.method == "POST":
+        return passport_verify_route()
     if target == "segment-live" and request.method == "POST":
         return segment_live_route()
     return jsonify({"error": "Not found."}), 404

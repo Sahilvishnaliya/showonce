@@ -41,6 +41,15 @@ function drawBins() {
 }
 function drawCubes() {
   const g = $("#cubes");
+  const distractor = document.createElementNS(SVGNS, "rect");
+  distractor.setAttribute("x", 205); distractor.setAttribute("y", 262);
+  distractor.setAttribute("width", 28); distractor.setAttribute("height", 28); distractor.setAttribute("rx", 7);
+  distractor.setAttribute("fill", "#98A2B3"); distractor.setAttribute("stroke", "rgba(14,30,50,.35)");
+  const dt = document.createElementNS(SVGNS, "text");
+  dt.setAttribute("x", 219); dt.setAttribute("y", 308); dt.setAttribute("text-anchor", "middle");
+  dt.setAttribute("font-family", "IBM Plex Mono, monospace"); dt.setAttribute("font-size", "9.5");
+  dt.setAttribute("fill", "#667085"); dt.textContent = "DISTRACTOR";
+  g.append(distractor, dt);
   cubes.forEach(c => {
     const r = document.createElementNS(SVGNS, "rect");
     r.setAttribute("width", 28); r.setAttribute("height", 28); r.setAttribute("rx", 7);
@@ -218,6 +227,7 @@ $("#btn-robot").addEventListener("click", async () => {
       body: JSON.stringify({ objects: cubes.map(c => ({ id: c.id, color: c.color, ...cubeAt(c) })), bins: BINS }) })
       .then(x => x.json());
     $("#verify-box").hidden = false;
+    lastVerification = v;
     $("#verify-score").textContent = `${v.score}%`;
     $("#verify-detail").textContent = `${v.correct}/${v.total} objects in the right bin`;
     logEvent(v.score === 100 ? "ok" : "verify", `Self-check: ${v.correct}/${v.total} correct — score ${v.score}%.`);
@@ -236,6 +246,63 @@ $("#cta-demo").addEventListener("click", () => {
   $("#console").scrollIntoView({ behavior: "smooth", block: "center" });
   setTimeout(() => $("#btn-demo").click(), 450);
 });
+
+/* ================= SKILL PASSPORT ================= */
+let issuedPassport = null, lastVerification = null;
+
+$("#btn-passport").addEventListener("click", async () => {
+  if (!program) return;
+  try {
+    const r = await fetch("/api/passport", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ program, verification: lastVerification || {}, bench: "showonce-web" }) });
+    issuedPassport = await r.json();
+    if (!r.ok) throw new Error(issuedPassport.error || "Passport issue failed.");
+    $("#passport-panel").hidden = false;
+    $("#passport-id").textContent = issuedPassport.skill_id;
+    $("#passport-hash").textContent = issuedPassport.sha256.slice(0, 18) + "…";
+    $("#passport-score").textContent = `${(issuedPassport.verification || {}).score ?? "—"}%`;
+    logEvent("passport", `Skill Passport issued: ${issuedPassport.skill_id} (sha256 ${issuedPassport.sha256.slice(0, 12)}…).`);
+    setState("Skill Passport issued — this skill now travels");
+  } catch (e) { setState(e.message); }
+});
+
+$("#btn-passport-download").addEventListener("click", () => {
+  if (!issuedPassport) return;
+  const blob = new Blob([JSON.stringify(issuedPassport, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${issuedPassport.skill_id}.passport.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+async function importPassportFile(file) {
+  if (!file) return;
+  try {
+    const passport = JSON.parse(await file.text());
+    const r = await fetch("/api/passport/verify", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passport }) });
+    const v = await r.json();
+    if (!r.ok || !v.valid) throw new Error(v.reason || "Passport rejected.");
+    program = passport.program;
+    issuedPassport = passport;
+    renderProgram(program);
+    $("#passport-panel").hidden = false;
+    $("#passport-id").textContent = v.skill_id;
+    $("#passport-hash").textContent = passport.sha256.slice(0, 18) + "…";
+    $("#passport-score").textContent = `${v.issued_verification ?? "—"}%`;
+    $("#passport-status").textContent = "Imported and hash-verified. Shuffle the bench and let the robot execute this foreign skill.";
+    $("#btn-shuffle").disabled = false;
+    flowState(null, ["btn-demo", "btn-learn"]);
+    logEvent("passport", `Imported Skill Passport ${v.skill_id} — hash verified, program loaded.`);
+    setState("Imported skill ready — shuffle and run it");
+  } catch (e) {
+    logEvent("passport", `Passport rejected: ${e.message}`);
+    setState(`Passport rejected: ${e.message}`);
+  }
+}
+$("#passport-file").addEventListener("change", e => importPassportFile(e.target.files[0]));
+$("#passport-file-main").addEventListener("change", e => importPassportFile(e.target.files[0]));
 
 /* ================= CAMERA (SAM live) ================= */
 let stream = null;

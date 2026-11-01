@@ -1,6 +1,7 @@
 import unittest
 
 from core.learn import learn_program
+from core.passport import create_passport, verify_passport
 from core.robot import plan_execution, verify_execution
 
 BINS = [
@@ -46,6 +47,15 @@ class LearnTests(unittest.TestCase):
     def test_verify_detects_wrong_bin(self):
         wrong = [{"id": "cube-red", "color": "red", "x": 320, "y": 71}]  # in blue bin
         self.assertEqual(verify_execution(wrong, BINS)["score"], 0)
+
+
+class PassportTests(unittest.TestCase):
+    def test_passport_round_trip_and_tamper(self):
+        p = learn_program(TRACKS, BINS)
+        passport = create_passport(p, {"score": 100})
+        self.assertTrue(verify_passport(passport)["valid"])
+        passport["program"]["rules"]["red"] = "bin-blue"  # tamper
+        self.assertFalse(verify_passport(passport)["valid"])
 
 
 if __name__ == "__main__":

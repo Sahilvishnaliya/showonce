@@ -76,7 +76,7 @@
               <rect x="7" y="-30" width="7" height="20" rx="3.5" fill="#F2C29B" stroke="#C98F5F"/>
             </g>
           </svg>
-          <div class="bench-caption mono" id="bench-caption">Bench · 3 cubes · 3 bins · robot arm on standby</div>
+          <div class="bench-caption mono" id="bench-caption">Bench · 3 cubes · 1 distractor (ignored) · 3 bins · robot arm on standby</div>
         </div>
 
         <div class="flow-steps" aria-label="Teaching flow">
@@ -90,6 +90,10 @@
           <div>
             <h3 class="panel-title">Learned program</h3>
             <div id="program" class="program"><p class="muted">No program yet. Run a demonstration and teach the robot.</p></div>
+            <div class="passport-actions">
+              <label class="btn btn-soft btn-sm" for="passport-file-main">Import Skill Passport</label>
+              <input type="file" id="passport-file-main" accept="application/json" hidden>
+            </div>
           </div>
           <div>
             <h3 class="panel-title">Session log</h3>
@@ -97,6 +101,21 @@
             <div class="verify-box" id="verify-box" hidden>
               <strong>Robot self-check</strong>
               <div class="verify-score"><span id="verify-score">—</span><small id="verify-detail">not run</small></div>
+              <button class="btn btn-sm" id="btn-passport" type="button">Issue Skill Passport</button>
+            </div>
+            <div class="passport-panel" id="passport-panel" hidden>
+              <p class="mini-title">Skill Passport <span class="badge ok" id="passport-valid">hash-verified</span></p>
+              <dl class="passport-meta mono">
+                <div><dt>skill</dt><dd id="passport-id">—</dd></div>
+                <div><dt>sha256</dt><dd id="passport-hash">—</dd></div>
+                <div><dt>issued score</dt><dd id="passport-score">—</dd></div>
+              </dl>
+              <div class="passport-actions">
+                <button class="btn btn-soft btn-sm" id="btn-passport-download" type="button">Download passport (.json)</button>
+                <label class="btn btn-soft btn-sm" for="passport-file">Import passport</label>
+                <input type="file" id="passport-file" accept="application/json" hidden>
+              </div>
+              <p class="mono muted" id="passport-status">Take this file to any ShowOnce bench — it imports, executes, and re-verifies the skill there. Edit one byte and the hash fails.</p>
             </div>
           </div>
         </div>
