@@ -1,0 +1,2 @@
+Flask>=3.0
+meta-sam-parser>=0.1.0

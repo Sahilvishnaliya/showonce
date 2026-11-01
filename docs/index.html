@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShowOnce Docs</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFBF4;color:#0E1E32;font-family:Inter,system-ui,sans-serif;line-height:1.65}
+header{position:sticky;top:0;background:#FFFBF4;border-bottom:1px solid #EDE6DA;padding:14px 22px;display:flex;gap:22px;align-items:center}
+a{color:#2667F5} .wrap{max-width:820px;margin:0 auto;padding:28px 22px 80px}
+h1,h2{font-family:"Inter Tight",Inter,sans-serif;letter-spacing:-.03em;line-height:1.08}
+h1{font-size:40px} h2{font-size:27px;margin-top:44px}
+code{font-family:"IBM Plex Mono",monospace;background:#F3EEE3;border:1px solid #EDE6DA;border-radius:5px;padding:1px 5px;font-size:.86em}
+pre{background:#0E1E32;color:#DCE6F7;border-radius:12px;padding:16px;overflow:auto}
+pre code{background:none;border:0;color:inherit}
+table{border-collapse:collapse;width:100%;font-size:14px} th,td{border:1px solid #EDE6DA;padding:8px 11px;text-align:left}
+.logo{font-family:"Inter Tight";font-weight:800;font-size:20px;color:#0E1E32;text-decoration:none}
+</style></head><body>
+<header><a class="logo" href="../">▦ showonce</a><a href="../">Open App ↗</a><span>Documentation</span></header>
+<main class="wrap">
+<h1>ShowOnce documentation</h1>
+<p>ShowOnce teaches a robot arm a pick-and-place task from <strong>one human demonstration</strong>. SAM 3.1 tracks objects through the demo, the system infers the rule behind it, Muse Wonder compiles the program, the robot repeats it on a rearranged bench, and vision verifies the result.</p>
+<h2>The loop</h2>
+<ol>
+<li><strong>Demonstrate</strong> — do the task once. Objects are tracked as SAM masks → centroids (<code>tracks</code>).</li>
+<li><strong>Learn</strong> — <code>POST /api/learn {tracks, bins}</code> infers the rule (e.g. colour → matching bin) and emits a pick-and-place program with a confidence score.</li>
+<li><strong>Repeat</strong> — <code>POST /api/plan {objects, bins, program}</code> plans from live positions; a 2-link IK arm executes.</li>
+<li><strong>Verify</strong> — <code>POST /api/verify {objects, bins}</code> checks every object against the rule and scores the run.</li>
+</ol>
+<h2>Live camera</h2>
+<p><code>POST /api/segment-live {image, prompts}</code> segments a real bench frame with SAM 3.1 (one request per prompt), parses Meta's wire format, and decodes masks with the official <code>meta_sam_parser</code>. Requires <code>MODEL_API_KEY</code> + <code>SECONDNURSE_MODE=live</code> on the server; without them it returns 503 — results are never invented.</p>
+<h2>Why it generalizes</h2>
+<p>The learner records <em>rules</em>, not positions. Planning reads current object coordinates at run time, so a shuffled bench is the normal case. Verification is geometric: an object is correct exactly when its centre is inside the bin of its own colour.</p>
+<h2>Scope</h2>
+<p>ShowOnce ships with a simulated arm so the full loop runs anywhere; the learned program is plain JSON pick-and-place for a real controller to consume. It is a robotics teaching system, not a safety-rated industrial controller.</p>
+</main></body></html>

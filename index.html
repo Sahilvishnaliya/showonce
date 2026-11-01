@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShowOnce — teach a robot by showing it once</title>
+<meta name="description" content="Show a robot arm a pick-and-place task once. SAM 3.1 tracks the demonstration, Muse Wonder compiles it into a robot program, and the robot repeats it on a rearranged bench — then verifies its own work.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='4' y='4' width='16' height='16' rx='4' fill='%232667F5'/%3E%3Ccircle cx='12' cy='12' r='3.4' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="#top"><span class="logo-mark">▦</span>showonce</a>
+  <nav class="topnav" aria-label="Main">
+    <a href="#teach">Platform ▾</a><a href="#how">How it works ▾</a><a href="#console">Live console</a><a href="/docs/">Docs</a>
+  </nav>
+  <div class="top-actions">
+    <span class="mode-pill" id="mode-pill">Checking models…</span>
+    <a class="btn btn-sm" href="#console">Teach a robot</a>
+  </div>
+</header>
+
+<div class="subnav wrap">
+  <span class="subnav-parent"><span class="subnav-dot">◉</span> Robotics</span>
+  <nav aria-label="Product">
+    <a class="is-active" href="#teach">Teach</a><a href="#repeat">Repeat</a><a href="#verify">Verify</a><a href="#camera">Camera</a>
+  </nav>
+</div>
+
+<main id="top">
+  <!-- HERO + CONSOLE -->
+  <section class="hero wrap">
+    <div class="hero-copy">
+      <h1>The easiest way to teach a robot a new task</h1>
+      <p class="lede">Show it once — no code, no teach pendant, no engineer. ShowOnce watches your demonstration, learns the rule behind it, and the robot repeats it on a rearranged bench.</p>
+      <div class="hero-cta">
+        <button class="btn" id="cta-demo">▶ Watch the demonstration</button>
+        <p class="hero-note">One demonstration. A robot program. Verified by the robot itself.</p>
+      </div>
+      <dl class="hero-stats">
+        <div><dt>1×</dt><dd>demonstration needed</dd></div>
+        <div><dt>0</dt><dd>lines of code written</dd></div>
+        <div><dt>100%</dt><dd>of runs self-verified</dd></div>
+      </dl>
+    </div>
+
+    <div class="card-shell" id="console">
+      <div class="console-card">
+        <div class="console-head">
+          <div><strong>Teaching bench</strong><span id="console-state">Ready when you are</span></div>
+          <span class="live-pill" id="live-pill">SAM 3.1 · Muse Wonder</span>
+        </div>
+
+        <div class="bench-wrap">
+          <svg id="bench" viewBox="0 0 640 430" role="img" aria-label="Bench with coloured cubes, bins, a demonstrating hand and a robot arm">
+            <rect width="640" height="430" fill="#FFF6E8"/>
+            <!-- bins -->
+            <g id="bins"></g>
+            <!-- robot arm -->
+            <g id="arm" aria-hidden="true">
+              <line id="arm-upper" x1="320" y1="402" x2="320" y2="300" stroke="#0E1E32" stroke-width="15" stroke-linecap="round"/>
+              <line id="arm-fore" x1="320" y1="300" x2="320" y2="215" stroke="#2667F5" stroke-width="12" stroke-linecap="round"/>
+              <circle cx="320" cy="402" r="17" fill="#0E1E32"/>
+              <circle id="arm-elbow" cx="320" cy="300" r="10" fill="#0E1E32"/>
+              <g id="gripper"><path d="M308 208 l12 14 l12 -14" fill="none" stroke="#0E1E32" stroke-width="6" stroke-linecap="round"/></g>
+            </g>
+            <!-- cubes + hand injected by JS -->
+            <g id="cubes"></g>
+            <g id="hand" opacity="0" aria-hidden="true">
+              <circle cx="0" cy="0" r="21" fill="#F2C29B" stroke="#C98F5F" stroke-width="2"/>
+              <rect x="-13" y="-30" width="7" height="20" rx="3.5" fill="#F2C29B" stroke="#C98F5F"/>
+              <rect x="-3" y="-34" width="7" height="24" rx="3.5" fill="#F2C29B" stroke="#C98F5F"/>
+              <rect x="7" y="-30" width="7" height="20" rx="3.5" fill="#F2C29B" stroke="#C98F5F"/>
+            </g>
+          </svg>
+          <div class="bench-caption mono" id="bench-caption">Bench · 3 cubes · 3 bins · robot arm on standby</div>
+        </div>
+
+        <div class="flow-steps" aria-label="Teaching flow">
+          <button class="flow-btn" id="btn-demo"><span>1</span> Demonstrate</button>
+          <button class="flow-btn" id="btn-learn" disabled><span>2</span> Learn the rule</button>
+          <button class="flow-btn" id="btn-shuffle" disabled><span>3</span> Shuffle the bench</button>
+          <button class="flow-btn" id="btn-robot" disabled><span>4</span> Robot repeats</button>
+        </div>
+
+        <div class="console-grid">
+          <div>
+            <h3 class="panel-title">Learned program</h3>
+            <div id="program" class="program"><p class="muted">No program yet. Run a demonstration and teach the robot.</p></div>
+          </div>
+          <div>
+            <h3 class="panel-title">Session log</h3>
+            <ul class="log" id="log"><li class="log-empty">Nothing yet — your demonstration is step one.</li></ul>
+            <div class="verify-box" id="verify-box" hidden>
+              <strong>Robot self-check</strong>
+              <div class="verify-score"><span id="verify-score">—</span><small id="verify-detail">not run</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <p class="proof wrap">Built for <strong>small workshops, classrooms, and labs</strong> that can't hire a robotics engineer for every new task</p>
+
+  <!-- TEACH -->
+  <section class="feature wrap" id="teach">
+    <div class="feature-copy">
+      <p class="kicker kicker-teach">Demonstrate</p>
+      <h2>Show the task the way you'd show a person</h2>
+      <p>Pick up each cube and put it where it belongs. That's the whole programming interface. SAM 3.1 tracks every object as a pixel mask through your demonstration — what moved, from where, to where.</p>
+      <ul class="ticks">
+        <li>Object tracks recorded as mask centroids, frame by frame</li>
+        <li>Works with a phone camera over any bench</li>
+        <li>No markers, no gloves, no special hardware</li>
+      </ul>
+      <button class="btn" data-goto-demo>Start a demonstration</button>
+    </div>
+    <div class="mini-shell"><div class="mini-card">
+      <p class="mini-title">Demonstration tracks</p>
+      <div class="track-row"><span class="cube red"></span> red cube <span class="mono">bench → red bin</span> <span class="badge ok">tracked</span></div>
+      <div class="track-row"><span class="cube blue"></span> blue cube <span class="mono">bench → blue bin</span> <span class="badge ok">tracked</span></div>
+      <div class="track-row"><span class="cube yellow"></span> yellow cube <span class="mono">bench → yellow bin</span> <span class="badge ok">tracked</span></div>
+      <p class="mini-foot mono">SAM 3.1 · one prompt per object · masks, not guesses</p>
+    </div></div>
+  </section>
+
+  <!-- REPEAT -->
+  <section class="feature flip wrap" id="repeat">
+    <div class="feature-copy">
+      <p class="kicker kicker-repeat">Learn &amp; repeat</p>
+      <h2>It learns the rule, not just the moves</h2>
+      <p>Anyone can replay a recording. ShowOnce infers the <em>rule</em> behind your demonstration — “sort by colour into the matching bin” — with Muse Wonder compiling the demonstration into a robot program. Shuffle the bench, and the robot still gets it right, because it learned the intention.</p>
+      <ul class="ticks">
+        <li>Demonstration → task graph → executable pick-and-place program</li>
+        <li>Generalizes to new arrangements it has never seen</li>
+        <li>Every program is readable JSON, not a black box</li>
+      </ul>
+      <button class="btn" data-goto-demo>See it generalize</button>
+    </div>
+    <div class="mini-shell"><div class="mini-card">
+      <p class="mini-title">Learned program</p>
+      <pre class="mini-code mono">{
+  "task": "sort_by_color",
+  "rules": { "red": "bin-red",
+             "blue": "bin-blue",
+             "yellow": "bin-yellow" },
+  "generalizes": true
+}</pre>
+      <p class="mini-foot mono">Compiled by Muse Wonder · executed deterministically</p>
+    </div></div>
+  </section>
+
+  <!-- VERIFY -->
+  <section class="feature wrap" id="verify">
+    <div class="feature-copy">
+      <p class="kicker kicker-verify">Verify</p>
+      <h2>The robot checks its own work</h2>
+      <p>After every run, ShowOnce looks at the bench again and scores itself: is every object in the bin the rule demands? A robot that verifies is a robot you can leave alone with the boring work.</p>
+      <ul class="ticks">
+        <li>Post-run vision check against the learned rule</li>
+        <li>Per-object pass/fail, with a session score</li>
+        <li>Failures are reported, never hidden</li>
+      </ul>
+      <button class="btn" data-goto-demo>Watch it self-check</button>
+    </div>
+    <div class="mini-shell"><div class="mini-card">
+      <p class="mini-title">Self-check · last run</p>
+      <div class="track-row"><span class="cube red"></span> red cube <span class="badge ok">in red bin ✓</span></div>
+      <div class="track-row"><span class="cube blue"></span> blue cube <span class="badge ok">in blue bin ✓</span></div>
+      <div class="track-row"><span class="cube yellow"></span> yellow cube <span class="badge ok">in yellow bin ✓</span></div>
+      <p class="mini-foot mono">Score 100 · verified by geometry, not confidence</p>
+    </div></div>
+  </section>
+
+  <!-- CAMERA -->
+  <section class="feature flip wrap" id="camera">
+    <div class="feature-copy">
+      <p class="kicker kicker-camera">Live camera</p>
+      <h2>Your bench, through SAM's eyes</h2>
+      <p>Point a camera at a real bench. ShowOnce segments cubes and bins live with SAM 3.1 — the same tracking that records demonstrations — so a physical demonstration becomes robot data.</p>
+      <ul class="ticks">
+        <li>Front or overhead camera, full-screen mode</li>
+        <li>Boxes and masks drawn over your real bench</li>
+        <li>Needs a Meta API key on the server — nothing is stored</li>
+      </ul>
+      <div class="camera-actions">
+        <button class="btn" id="btn-camera">Enable camera</button>
+        <button class="btn btn-soft" id="btn-analyze" disabled>Analyze frame</button>
+        <button class="btn btn-soft" id="btn-camera-off" disabled>Camera off</button>
+      </div>
+      <p class="mono" id="camera-status">Camera is off.</p>
+    </div>
+    <div class="mini-shell"><div class="mini-card cam-card">
+      <div class="video-wrap">
+        <video id="camera-video" autoplay playsinline muted></video>
+        <div id="cam-overlay" aria-hidden="true"></div>
+        <p class="cam-empty" id="cam-empty">Your bench will appear here.<br>Coloured cubes + matching bins work best.</p>
+      </div>
+      <p class="mini-foot mono" id="segment-status">Not analyzed yet.</p>
+    </div></div>
+  </section>
+
+  <!-- HOW -->
+  <section class="how wrap" id="how">
+    <h2>How ShowOnce works</h2>
+    <div class="how-grid">
+      <article><span class="how-num">01</span><h3>Demonstrate</h3><p>A human does the task once, on camera. SAM 3.1 tracks each object's mask from start to finish.</p></article>
+      <article><span class="how-num">02</span><h3>Learn</h3><p>Muse Wonder compiles the demonstration into a program — and infers the rule, so new arrangements work too.</p></article>
+      <article><span class="how-num">03</span><h3>Repeat</h3><p>The robot executes pick-and-place from the program, object by object, on a bench it has never seen arranged this way.</p></article>
+      <article><span class="how-num">04</span><h3>Verify</h3><p>Vision checks the final bench against the rule and scores the run. The robot grades its own homework.</p></article>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq wrap">
+    <h2>FAQs</h2>
+    <details><summary>Do I need a real robot arm?</summary><p>No. ShowOnce ships with a simulated 2-link arm so the full loop — demonstrate, learn, repeat, verify — runs anywhere. The learned program is plain JSON pick-and-place, the same shape a real arm controller consumes.</p></details>
+    <details><summary>What tasks can it learn?</summary><p>Any pick-and-place task where the rule is visible in one demonstration: sorting by colour, kitting parts into bins, packing items in a demonstrated order. If a person can show it once, ShowOnce can learn it.</p></details>
+    <details><summary>How does it handle a rearranged bench?</summary><p>It doesn't memorize positions — it learns the rule (for example, colour → bin). Planning happens from the live object positions at run time, so shuffled benches are the normal case, not an edge case.</p></details>
+    <details><summary>Which models does it use?</summary><p>SAM 3.1 for object masks and tracking, Muse Wonder for demonstration-to-program compilation. The rule inference, planning, and verification are deterministic code you can read and test.</p></details>
+    <details><summary>Is my camera feed stored?</summary><p>No. Frames go only to the Meta API you configure, for segmentation. Sessions keep event text and scores, not video.</p></details>
+  </section>
+
+  <section class="closing wrap">
+    <h2>Robots should learn<br>the way people do. <span>By watching.</span></h2>
+    <button class="btn btn-lg" data-goto-demo>Teach your first task</button>
+  </section>
+</main>
+
+<footer class="footer wrap">
+  <div class="footer-word">showonce</div>
+  <div class="footer-row">
+    <span class="logo"><span class="logo-mark">▦</span>showonce</span>
+    <p>Teach a robot by showing it once. SAM 3.1 tracks the demonstration, Muse Wonder compiles the program, the robot verifies its own work.</p>
+    <span class="mono">Robotics · Push the Frontier</span>
+  </div>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>
